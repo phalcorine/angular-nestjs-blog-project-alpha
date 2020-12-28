@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { ConflictException, NotFoundException } from "@nestjs/common";
 import { EntityRepository, Repository } from "typeorm";
 import { UserEntity } from "../models/user.entity";
 import { User } from "../models/user.interface";
@@ -19,8 +19,19 @@ export class UserRepository extends Repository<UserEntity> {
         return user;
     }
 
+    async getUserByUsername(username: string): Promise<UserEntity> {
+        const user = await this.findOne({ username: username });
+
+        return user;
+    }
+
     async createUser(data: User): Promise<User> {
-        const user = new UserEntity();
+        let user = await this.getUserByUsername(data.username);
+        if(user) {
+            throw new ConflictException(`A user with the specified username: ${data.username} already exists...`);
+        }
+
+        user = new UserEntity();
         user.name = data.name;
         user.username = data.username;
 
@@ -30,10 +41,11 @@ export class UserRepository extends Repository<UserEntity> {
     async updateUser(id: string, data: User): Promise<UserEntity> {
         const user = await this.getUserById(id);
 
-        user.name = data.name;
-        user.username = data.username;
+        user.name = data.name ?? user.name;
 
-        return await this.save(user);
+        await this.save(user);
+
+        return user;
     }
 
     async deleteUser(id: string): Promise<any> {
