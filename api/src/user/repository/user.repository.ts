@@ -19,13 +19,19 @@ export class UserRepository extends Repository<UserEntity> {
         return user;
     }
 
+    async getUserByEmail(emailAddress: string): Promise<UserEntity> {
+        const user = await this.findOne({ email: emailAddress });
+
+        return user;
+    }
+
     async getUserByUsername(username: string): Promise<UserEntity> {
         const user = await this.findOne({ username: username });
 
         return user;
     }
 
-    async createUser(data: User): Promise<User> {
+    async createUser(data: User): Promise<UserEntity> {
         let user = await this.getUserByUsername(data.username);
         if(user) {
             throw new ConflictException(`A user with the specified username: ${data.username} already exists...`);
@@ -34,6 +40,8 @@ export class UserRepository extends Repository<UserEntity> {
         user = new UserEntity();
         user.name = data.name;
         user.username = data.username;
+        user.email = data.email;
+        user.password = data.password;
 
         return await this.save(user);
     }
